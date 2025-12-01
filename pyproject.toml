@@ -1,0 +1,53 @@
+[build-system]
+requires = ["setuptools>=45", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "pysoniq"
+version = "0.1.0"
+description = "Lightweight, pure-Python cross-platform audio playback library"
+readme = "README.md"
+requires-python = ">=3.8"
+license = "MIT"
+authors = [
+    {name = "laelume"}
+]
+keywords = [
+    "audio", "sound", "playback", "music", 
+    "cross-platform", "pure-python", "audio-playback",
+    "audio-player", "sound-playback", "wav"
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
+    "Operating System :: OS Independent",
+    "Operating System :: Microsoft :: Windows",
+    "Operating System :: MacOS",
+    "Operating System :: POSIX :: Linux",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Multimedia :: Sound/Audio",
+    "Topic :: Multimedia :: Sound/Audio :: Players",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+]
+
+dependencies = [
+    "numpy>=1.19.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/laelume/pysoniq"
+Repository = "https://github.com/laelume/pysoniq"
+Issues = "https://github.com/laelume/pysoniq/issues"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["pysoniq*"]
+
+[tool.setuptools.package-data]
+pysoniq = ["*.md"]
