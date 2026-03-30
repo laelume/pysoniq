@@ -17,7 +17,7 @@ from .gain import (
     )
 
 from .fourier import stft, fft_frequencies, frames_to_time, amplitude_to_db
-from .visualize import spectrog
+from .visualize import spectroviz
 
 __version__ = '0.1.4'
 __author__ = "laelume"

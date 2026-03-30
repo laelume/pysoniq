@@ -2,7 +2,7 @@
 Display utilities
 """
 
-def spectrog(data, sr, hop_length, x_axis='time', y_axis='hz', 
+def spectroviz(data, sr, hop_length, x_axis='time', y_axis='hz', 
             cmap='viridis', ax=None, **kwargs):
     """
     Display a spectrogram
