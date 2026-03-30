@@ -2,7 +2,6 @@
 
 import numpy as np
 
-
 def to_pcm(data, target_bits=16):
     """
     Convert float audio to PCM with auto bit depth detection
@@ -50,7 +49,6 @@ def to_pcm(data, target_bits=16):
     
     return sampwidth, data_int
 
-
 def to_int16(audio):
     """
     Convert float audio to 16-bit PCM
@@ -64,14 +62,12 @@ def to_int16(audio):
     audio = np.clip(audio, -1.0, 1.0)
     return (audio * 32767).astype(np.int16)
 
-
 def int32_to_24bit_bytes(data_int32):
     """Convert int32 array to 24-bit byte array"""
     data_bytes = bytearray()
     for sample in data_int32:
         data_bytes.extend(sample.to_bytes(4, byteorder='little', signed=True)[:3])
     return bytes(data_bytes)
-
 
 def normalize_audio(audio, target_level=-3.0):
     """
@@ -90,4 +86,52 @@ def normalize_audio(audio, target_level=-3.0):
         audio = audio * (target_amplitude / rms)
     return np.clip(audio, -1.0, 1.0)
 
+def hz_to_mel(hz):
+    """
+    Convert Hz to mel scale
+    
+    Args:
+        hz: float or array, frequency in Hz
+    
+    Returns:
+        mel: float or array, frequency in mels
+    """
+    return 2595 * np.log10(1 + hz / 700)
 
+def mel_to_hz(mel):
+    """
+    Convert mel scale to Hz
+    
+    Args:
+        mel: float or array, frequency in mels
+    
+    Returns:
+        hz: float or array, frequency in Hz
+    """
+    return 700 * (10**(mel / 2595) - 1)
+
+def linear_to_db(S, ref=1.0):
+    """
+    Convert linear magnitude to decibels
+    
+    Args:
+        S: numpy array, linear magnitude values
+        ref: float, reference value (default 1.0)
+    
+    Returns:
+        dB values
+    """
+    return 20 * np.log10(np.maximum(S, 1e-12) / ref)
+
+def db_to_linear(db, ref=1.0):
+    """
+    Convert decibels to linear magnitude
+    
+    Args:
+        db: numpy array, values in dB
+        ref: float, reference value (default 1.0)
+    
+    Returns:
+        linear magnitude values
+    """
+    return ref * 10**(db / 20)

@@ -4,7 +4,16 @@ import numpy as np
 import wave
 from pathlib import Path
 
-def load(filepath):
+class Signal:
+    def __init__(self, y, sr):
+        self.y = y
+        self.sr = sr
+
+def load_signal(path): 
+    y, sr = load_audio(path)
+    return Signal(y, sr) 
+
+def load_audio(filepath):
     """
     Load audio file
     
@@ -23,7 +32,6 @@ def load(filepath):
         return _load_wav(filepath)
     else:
         raise ValueError(f"Unsupported format: {filepath.suffix}")
-
 
 def _load_wav(filepath):
     """Load WAV file using wave module"""
@@ -67,8 +75,7 @@ def _load_wav(filepath):
     
     return audio, framerate
 
-
-def save(filepath, audio, samplerate):
+def save_audio(filepath, audio, samplerate):
     """
     Save audio to file
     
@@ -85,7 +92,6 @@ def save(filepath, audio, samplerate):
         _save_wav(filepath, audio, samplerate)
     else:
         raise ValueError(f"Unsupported format: {filepath.suffix}")
-
 
 def _save_wav(filepath, audio, samplerate):
     """Save WAV file using wave module"""

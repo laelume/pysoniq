@@ -1,53 +1,9 @@
+"""Minimal-dependency audio processing and fourier transform utilities"""
+
 import numpy as np
 from scipy import signal
 from scipy.io import wavfile
-
-"""
-Audio processing utilities using scipy/numpy only
-"""
-
-# def load(filepath, sr=None):
-#     """
-#     Load audio file and optionally resample
-    
-#     Parameters
-#     ----------
-#     filepath : str
-#         Path to WAV file
-#     sr : int or None
-#         Target sample rate. If None, uses native sample rate
-        
-#     Returns
-#     -------
-#     y : np.ndarray
-#         Audio time series (float32, normalized to [-1, 1])
-#     sr : int
-#         Sample rate
-#     """
-#     native_sr, y = wavfile.read(filepath)
-    
-#     # Convert to float and normalize
-#     if y.dtype == np.int16:
-#         y = y.astype(np.float32) / 32768.0
-#     elif y.dtype == np.int32:
-#         y = y.astype(np.float32) / 2147483648.0
-#     elif y.dtype == np.uint8:
-#         y = (y.astype(np.float32) - 128) / 128.0
-#     elif y.dtype == np.float32 or y.dtype == np.float64:
-#         y = y.astype(np.float32)
-    
-#     # Convert stereo to mono
-#     if len(y.shape) > 1:
-#         y = np.mean(y, axis=1)
-    
-#     # Resample if needed
-#     if sr is not None and sr != native_sr:
-#         num_samples = int(len(y) * sr / native_sr)
-#         y = signal.resample(y, num_samples)
-#         return y, sr
-    
-#     return y, native_sr
-
+from .utils import hz_to_mel, mel_to_hz, linear_to_db
 
 def stft(y, n_fft=1024, hop_length=None, window='hann'):
     """
@@ -93,10 +49,9 @@ def stft(y, n_fft=1024, hop_length=None, window='hann'):
     
     return Zxx
 
-
 def fft_frequencies(sr, n_fft):
     """
-    Frequencies corresponding to FFT bins
+    Frequencies corresponding to linear Hz bins
     
     Parameters
     ----------
@@ -112,6 +67,14 @@ def fft_frequencies(sr, n_fft):
     """
     return np.linspace(0, sr / 2, n_fft // 2 + 1)
 
+def mel_frequencies(n_mels=128, fmin=0.0, fmax=11025.0):
+    """
+    Frequencies corresponding to mel-spaced bins
+    """
+    mel_min = hz_to_mel(fmin)
+    mel_max = hz_to_mel(fmax)
+    mels = np.linspace(mel_min, mel_max, n_mels)
+    return mel_to_hz(mels)
 
 def frames_to_time(frames, sr, hop_length):
     """
@@ -132,7 +95,6 @@ def frames_to_time(frames, sr, hop_length):
         Time in seconds
     """
     return frames * hop_length / sr
-
 
 def amplitude_to_db(S, ref=1.0, amin=1e-10):
     """
@@ -157,3 +119,17 @@ def amplitude_to_db(S, ref=1.0, amin=1e-10):
     db = 20.0 * np.log10(magnitude / ref)
     return db
 
+def power_to_db(S, ref=1.0, amin=1e-12):
+    """
+    Convert power spectrogram to dB scale
+    
+    Args:
+        S: numpy array, power spectrogram
+        ref: float, reference power (default 1.0)
+        amin: float, minimum power threshold
+        
+    Returns:
+        dB spectrogram
+    """
+    S_safe = np.maximum(amin, S)
+    return 10.0 * np.log10(S_safe / ref)

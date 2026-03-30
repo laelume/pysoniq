@@ -3,7 +3,6 @@
 import sys
 from . import loop as loop_module
 
-
 def stop():
     """Stop audio playback (preserves loop state)"""
     # Stop playback but preserve loop setting
@@ -15,7 +14,6 @@ def stop():
     else:
         _stop_unix()
 
-
 def _stop_windows():
     """Stop Windows playback"""
     try:
@@ -23,7 +21,6 @@ def _stop_windows():
         winsound.PlaySound(None, winsound.SND_PURGE)
     except:
         pass
-
 
 def _stop_unix():
     """Stop macOS/Linux playback"""

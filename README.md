@@ -1,6 +1,6 @@
 # pysoniq
 
-Minimal, pure-Python cross-platform audio playback library.
+Minimal, pure-Python cross-platform audio analysis and playback library.
 
 - **Pure Python** - No compiled extensions
 - **Cross-platform** - Windows, macOS, Linux
