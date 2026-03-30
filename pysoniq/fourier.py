@@ -7,7 +7,7 @@ from .utils import hz_to_mel, mel_to_hz, linear_to_db
 
 def stft(y, n_fft=1024, hop_length=None, window='hann'):
     """
-    Short-time Fourier transform
+    Complex-valued short-time Fourier transform (retains magnitude and phase information)
     
     Parameters
     ----------
@@ -48,6 +48,22 @@ def stft(y, n_fft=1024, hop_length=None, window='hann'):
                             padded=False)
     
     return Zxx
+
+def magnitude_stft(y, n_fft=1024, hop_length=None, window='hann'):
+    """
+    Real-valued magnitude of short-time Fourier transform (discards phase information)
+    
+    Args:
+        y: numpy array, audio time series
+        n_fft: int, FFT window size
+        hop_length: int or None, samples between frames
+        window: str, window type ('hann', 'hamming', 'blackman')
+        
+    Returns:
+        magnitude STFT matrix (real-valued, non-negative)
+    """
+    return np.abs(stft(y, n_fft=n_fft, hop_length=hop_length, window=window))
+
 
 def fft_frequencies(sr, n_fft):
     """
