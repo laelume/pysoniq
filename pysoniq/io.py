@@ -24,12 +24,14 @@ def load_audio(filepath):
         audio: numpy array (normalized float32, -1 to 1)
         samplerate: int, sample rate in Hz
     
-    Supports: .wav
+    Supports: .wav, .mp3
     """
     filepath = Path(filepath)
     
     if filepath.suffix.lower() == '.wav':
         return _load_wav(filepath)
+    elif filepath.suffix.lower() == '.mp3':
+        return _load_mp3(filepath)
     else:
         raise ValueError(f"Unsupported format: {filepath.suffix}")
 
@@ -74,6 +76,75 @@ def _load_wav(filepath):
         audio = audio.reshape(-1, n_channels)
     
     return audio, framerate
+
+# Adding support for mp3 files using ffmpeg
+
+def _load_mp3(filepath):
+    """Load MP3 file using ffmpeg (mono output)"""
+    import subprocess
+    from pathlib import Path
+    
+    filepath = Path(filepath)
+    
+    # Check ffmpeg availability
+    try:
+        subprocess.run(["ffmpeg", "-version"], 
+                      stdout=subprocess.DEVNULL, 
+                      stderr=subprocess.DEVNULL,
+                      check=True)
+    except (FileNotFoundError, subprocess.CalledProcessError):
+        raise RuntimeError(
+            "ffmpeg not found. Install from https://ffmpeg.org/"
+        )
+    
+    # Probe for sample rate
+    probe_cmd = [
+        "ffprobe",
+        "-v", "error",
+        "-select_streams", "a:0",
+        "-show_entries", "stream=sample_rate",
+        "-of", "default=noprint_wrappers=1:nokey=1",
+        str(filepath)
+    ]
+    
+    probe_result = subprocess.run(
+        probe_cmd,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True
+    )
+    
+    if probe_result.returncode != 0:
+        raise RuntimeError(f"ffprobe failed: {probe_result.stderr}")
+    
+    samplerate = int(probe_result.stdout.strip())
+    
+    # Decode audio to mono PCM
+    decode_cmd = [
+        "ffmpeg",
+        "-v", "error",
+        "-i", str(filepath),
+        "-f", "s16le",
+        "-acodec", "pcm_s16le",
+        "-ac", "1",  # Force mono
+        "-"
+    ]
+    
+    decode_result = subprocess.run(
+        decode_cmd,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE
+    )
+    
+    if decode_result.returncode != 0:
+        raise RuntimeError(f"ffmpeg decode failed: {decode_result.stderr.decode()}")
+    
+    # Convert to numpy (already mono, no reshape needed)
+    audio = np.frombuffer(decode_result.stdout, dtype=np.int16)
+    audio = audio.astype(np.float32) / 32768.0
+    
+    return audio, samplerate
+
 
 def save_audio(filepath, audio, samplerate):
     """

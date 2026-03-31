@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "pysoniq"
 version = "0.1.5"
-description = "Lightweight, pure-Python cross-platform audio playback library"
+description = "Lightweight Pythonic cross-platform audio playback library"
 readme = "README.md"
 requires-python = ">=3.8"
 license = "MIT"
@@ -37,7 +37,7 @@ classifiers = [
 ]
 
 dependencies = [
-    "numpy>=1.19.0",
+    "numpy>=1.19.0", ffmpeg
 ]
 
 [project.urls]

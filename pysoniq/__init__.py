@@ -6,7 +6,7 @@
 from .play import play
 from .stop import stop
 from .pause import pause, resume, is_paused
-from .io import load, save, load_signal
+from .io import load_audio, save_audio, load_signal
 from .loop import set_loop, is_looping
 
 from .gain import (

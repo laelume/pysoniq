@@ -3,7 +3,7 @@
 import numpy as np
 import sys
 from pathlib import Path
-from .io import load
+from .io import load_audio
 from . import loop as loop_module
 from .utils import to_pcm, int32_to_24bit_bytes
 from . import pause as pause_module
