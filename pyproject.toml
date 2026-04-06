@@ -37,7 +37,11 @@ classifiers = [
 ]
 
 dependencies = [
+<<<<<<< HEAD
     "numpy>=1.19.0", "ffmpeg", "wave"
+=======
+    "numpy>=1.19.0", " wave"
+>>>>>>> origin/main
 ]
 
 [project.urls]
