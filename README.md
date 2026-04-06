@@ -4,7 +4,7 @@ Minimal Pythonic cross-platform audio analysis and playback library.
 
 - **Pure Python** - No compiled extensions
 - **Cross-platform** - Windows, macOS, Linux
-- **Minimal dependencies** - Numpy, ffmpeg (adds mp3 support)
+- **Minimal dependencies** - numpy, wave, ffmpeg
 - **Simple API** - Play, pause, stop, loop
 
 ## Installation
@@ -16,7 +16,7 @@ pip install pysoniq
 ```python
 import pysoniq
 import numpy as np
-
+impore wave
 # Play WAV file
 pysoniq.play('audio.wav')
 
