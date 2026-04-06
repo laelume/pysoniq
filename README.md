@@ -2,9 +2,8 @@
 
 Minimal Pythonic cross-platform audio analysis and playback library.
 
-- **Pure Python** - No compiled extensions
 - **Cross-platform** - Windows, macOS, Linux
-- **Minimal dependencies** - numpy, wave, ffmpeg
+- **Minimal dependencies** - numpy, scipy, wave, ffmpeg
 - **Simple API** - Play, pause, stop, loop
 
 ## Installation
@@ -12,12 +11,14 @@ Minimal Pythonic cross-platform audio analysis and playback library.
 pip install pysoniq
 ```
 
+WIP: For MP3 support, install ffmpeg: https://ffmpeg.org/
+
 ## Use in context
 ```python
 import pysoniq
 import numpy as np
-impore wave
-impore wave
+import wave
+
 # Play WAV file
 pysoniq.play('audio.wav')
 
@@ -39,7 +40,7 @@ pysoniq.stop()
 
 **Playback**
 ```python
-pysoniq.play(data, samplerate)  # Play audio
+pysoniq.play(data, samplerate)   # Play audio
 pysoniq.stop()                   # Stop playback
 pysoniq.pause()                  # Pause
 pysoniq.resume()                 # Resume
@@ -60,8 +61,16 @@ audio = pysoniq.adjust_gain_level(audio, 1.5)
 
 **Audio I/O**
 ```python
-audio, sr = pysoniq.load('file.wav')
-pysoniq.save('output.wav', audio, sr)
+audio, sr = pysoniq.load_audio('file.wav')  # or .mp3
+pysoniq.save_audio('output.wav', audio, sr)
+```
+
+**Fourier Analysis**
+```python
+import pysoniq.fourier as pf
+
+S = pf.magnitude_stft(audio, n_fft=2048)
+S_db = pf.amplitude_to_db(S)
 ```
 
 ## Platform Requirements
@@ -70,9 +79,11 @@ pysoniq.save('output.wav', audio, sr)
 - **macOS**: Built-in (afplay)
 - **Linux**: ALSA (aplay) - usually pre-installed
 
+- **MP3**: ffmpeg (install separately)
+
 ## Limitations
 
-- WAV format only (for now)
+- mp3 support is WIP
 - Pause/resume uses time-based estimation
 - Gain changes apply on next loop iteration
 
