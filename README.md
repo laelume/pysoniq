@@ -16,8 +16,8 @@ pip install pysoniq
 ```python
 import pysoniq
 import numpy as np
-impore wave
-impore wave
+import wave
+
 # Play WAV file
 pysoniq.play('audio.wav')
 
