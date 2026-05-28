@@ -135,3 +135,28 @@ def db_to_linear(db, ref=1.0):
         linear magnitude values
     """
     return ref * 10**(db / 20)
+
+
+# === === === === === === === === === === === === === === === === === ===
+# time-normalize 1-D syllable waveforms to fixed length via linear interpolation
+# ==== ==== ==== ====
+
+def resample_to_fixed_length(y, target_len, verbose=False):
+    """Resample a 1-D signal to a fixed sample count via linear interpolation.
+
+    Maps the native time axis onto target_len uniformly spaced points,
+    independent of native duration. Preserves spectro-temporal shape while
+    normalizing length; absolute duration is not preserved.
+    """
+    n = len(y)
+    if n == target_len:
+        return y.astype(np.float32)
+    # source and target sample positions on a normalized [0, 1] time axis
+    src_x = np.linspace(0.0, 1.0, num=n, endpoint=True)
+    tgt_x = np.linspace(0.0, 1.0, num=target_len, endpoint=True)
+    y_rs  = np.interp(tgt_x, src_x, y).astype(np.float32)
+    if verbose:
+        # verbose: report length change per call
+        print(f"[resample] {n} -> {target_len}")
+    return y_rs
+# ==== ==== ==== ====
