@@ -19,6 +19,8 @@ from .gain import (
 from .fourier import stft, fft_frequencies, frames_to_time, amplitude_to_db
 from .visualize import spectroviz
 
+from .blobs import make_audioblobs
+
 __version__ = '0.1.4'
 __author__ = "laelume"
 __license__ = "MIT"
@@ -31,6 +33,7 @@ __all__ = [
     'adjust_gain_level', 'normalize', 'compress', 'limiter',
     'db_to_linear', 'linear_to_db', 
     'stft', 'fft_frequencies', 'frames_to_time', 'amplitude_to_db', 
-    'spectrog'
+    'spectrog', 
+    
     ]
 
