@@ -31,9 +31,8 @@ except ImportError:
 try:
     from tslearn.metrics import dtw as _dtw
     _DTW_AVAILABLE = True
-except ImportError:
+except (ImportError, RuntimeError):
     _DTW_AVAILABLE = False
-
 
 
 # === === === === === === === === 
@@ -444,12 +443,21 @@ def _compute_distance_matrix(
             """Compute SRVF elastic distance for a single pair. method=DP2, lam=0.0."""
             # FALLBACK: scalar elastic_distance — replace with parallel
             # batch kernel from srvf_core.py when integrated
-            return i, j, float(_elastic(
-                X[i].astype(np.float64),
-                X[j].astype(np.float64),
-                method="DP2",
-                lam=0.0,
-            ))
+            f1   = X[i].astype(np.float64)
+            f2   = X[j].astype(np.float64)
+            time = np.linspace(0, 1, len(f1))
+            
+            
+            # return i, j, float(_elastic(
+            #     f1, f2, time,
+            #     method="DP2",
+            #     lam=0.0,
+            # ))
+
+            result = _elastic(f1, f2, time, method="DP2", lam=0.0)
+            # fdasrsf may return (distance, path) tuple — extract scalar
+            d = result[0] if isinstance(result, tuple) else result
+            return i, j, float(d)
 
         prefer = "threads"
 

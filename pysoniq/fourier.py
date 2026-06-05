@@ -154,8 +154,6 @@ def mfcc(
 
     Pipeline: STFT -> power spectrogram -> mel filterbank -> log -> DCT -> n_mfcc coefficients.
     Returns array of shape (n_mfcc, n_frames).
-    Reference: Davis & Mermelstein (1980). IEEE TASLP.
-    DOI: https://doi.org/10.1109/TASSP.1980.1163420
     """
     from scipy.fft import dct
 
@@ -189,11 +187,32 @@ def mfcc(
 
 
 
+def mel_spectrogram(
+    y:          np.ndarray,
+    sr:         int,
+    n_mels:     int   = 128,
+    n_fft:      int   = 1024,
+    hop_length: int   = None,
+    fmin:       float = 0.0,
+    fmax:       float = None,
+    window:     str   = "hann",
+) -> np.ndarray:
+    """
+    Compute a mel-scale power spectrogram from a waveform.
 
+    Returns linear power shape (n_mels, n_frames) — dB conversion left to caller.
+    Reuses STFT -> power -> mel filterbank pipeline from mfcc, stops before log and DCT.
+    """
+    if hop_length is None:
+        hop_length = n_fft // 4
 
+    if fmax is None:
+        fmax = sr / 2.0
 
-
-
+    Zxx      = stft(y, n_fft=n_fft, hop_length=hop_length, window=window)
+    power    = np.abs(Zxx) ** 2
+    fb       = mel_filterbank(sr=sr, n_fft=n_fft, n_mels=n_mels, fmin=fmin, fmax=fmax)
+    return (fb @ power).astype(np.float32)              # (n_mels, n_frames)
 
 
 
