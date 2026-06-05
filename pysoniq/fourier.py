@@ -92,6 +92,130 @@ def mel_frequencies(n_mels=128, fmin=0.0, fmax=11025.0):
     mels = np.linspace(mel_min, mel_max, n_mels)
     return mel_to_hz(mels)
 
+
+def mel_filterbank(
+    sr:     int,
+    n_fft:  int,
+    n_mels: int   = 128,
+    fmin:   float = 0.0,
+    fmax:   float = None,
+) -> np.ndarray:
+    """
+    Construct a triangular mel filterbank matrix.
+
+    Returns a matrix of shape (n_mels, n_fft // 2 + 1) mapping linear
+    FFT bins to mel-spaced filter outputs.
+    Reference: O'Shaughnessy (1987). Speech Communication.
+    DOI: https://doi.org/10.1016/0167-6393(87)90050-3
+    """
+    if fmax is None:
+        fmax = sr / 2.0
+
+    # linear frequency bins
+    linear_freqs = fft_frequencies(sr, n_fft)           # (n_fft // 2 + 1,)
+    n_bins       = len(linear_freqs)
+
+    # mel center frequencies including boundary bins
+    mel_min  = hz_to_mel(fmin)
+    mel_max  = hz_to_mel(fmax)
+    mel_pts  = np.linspace(mel_min, mel_max, n_mels + 2)
+    hz_pts   = mel_to_hz(mel_pts)                        # (n_mels + 2,)
+
+    # construct triangular filters
+    fb = np.zeros((n_mels, n_bins), dtype=np.float32)
+    for m in range(1, n_mels + 1):
+        f_left   = hz_pts[m - 1]
+        f_center = hz_pts[m]
+        f_right  = hz_pts[m + 1]
+
+        for k in range(n_bins):
+            f = linear_freqs[k]
+            if f_left <= f <= f_center:
+                fb[m - 1, k] = (f - f_left) / (f_center - f_left + 1e-10)
+            elif f_center < f <= f_right:
+                fb[m - 1, k] = (f_right - f) / (f_right - f_center + 1e-10)
+
+    return fb
+
+
+def mfcc(
+    y:          np.ndarray,
+    sr:         int,
+    n_mfcc:     int   = 40,
+    n_mels:     int   = 128,
+    n_fft:      int   = 1024,
+    hop_length: int   = None,
+    fmin:       float = 0.0,
+    fmax:       float = None,
+    window:     str   = "hann",
+) -> np.ndarray:
+    """
+    Compute Mel-Frequency Cepstral Coefficients (MFCCs) from a waveform.
+
+    Pipeline: STFT -> power spectrogram -> mel filterbank -> log -> DCT -> n_mfcc coefficients.
+    Returns array of shape (n_mfcc, n_frames).
+    Reference: Davis & Mermelstein (1980). IEEE TASLP.
+    DOI: https://doi.org/10.1109/TASSP.1980.1163420
+    """
+    from scipy.fft import dct
+
+    if hop_length is None:
+        hop_length = n_fft // 4
+
+    if fmax is None:
+        fmax = sr / 2.0
+
+    # === === === === === === === === 
+    # P O W E R   S P E C T R O G R A M
+    # === === === === === === === ===
+    Zxx      = stft(y, n_fft=n_fft, hop_length=hop_length, window=window)
+    power    = np.abs(Zxx) ** 2                          # (n_fft//2+1, n_frames)
+
+    # === === === === === === === === 
+    # M E L   F I L T E R B A N K
+    # === === === === === === === ===
+    fb       = mel_filterbank(sr=sr, n_fft=n_fft, n_mels=n_mels, fmin=fmin, fmax=fmax)
+    mel_spec = fb @ power                                 # (n_mels, n_frames)
+
+    # log compression
+    mel_spec = np.log(mel_spec + 1e-10)
+
+    # === === === === === === === === 
+    # D C T
+    # === === === === === === === ===
+    # type-II DCT along mel axis, keep first n_mfcc coefficients
+    coeffs   = dct(mel_spec, type=2, axis=0, norm="ortho")
+    return coeffs[:n_mfcc, :]                            # (n_mfcc, n_frames)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 def frames_to_time(frames, sr, hop_length):
     """
     Convert frame indices to time in seconds

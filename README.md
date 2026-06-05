@@ -34,6 +34,16 @@ pysoniq.play(audio, sr)
 
 # Stop
 pysoniq.stop()
+
+# Make audio blobs for model input
+X, y = make_audioblobs(
+    source       = "path/to/wav_dir",
+    n_fft        = 512,
+    metric       = "euclidean",
+    n_classes    = 10,
+    random_state = 42,
+    verbose      = True,
+)
 ```
 
 ## Features

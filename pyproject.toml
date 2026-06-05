@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "pysoniq"
-version = "0.1.6"
+version = "0.1.8"
 description = "Lightweight Pythonic cross-platform audio playback library"
 readme = "README.md"
 requires-python = ">=3.8"
@@ -13,9 +13,9 @@ authors = [
     {name = "laelume"}
 ]
 keywords = [
-    "audio", "sound", "playback", "music", 
+    "audio", "sound", "playback", "music", "bioacoustics", 
     "cross-platform", "pure-python", "audio-playback",
-    "audio-player", "sound-playback", "wav"
+    "audio-player", "sound-playback", "wav", "aiml"
 ]
 classifiers = [
     "Development Status :: 4 - Beta",
