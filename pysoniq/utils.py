@@ -141,6 +141,10 @@ def db_to_linear(db, ref=1.0):
 # time-normalize 1-D syllable waveforms to fixed length via linear interpolation
 # ==== ==== ==== ====
 
+
+# Note that resample can assume signal periodicity, so may be better to use decimate or resample_poly
+# Though, importnat to be mindful of phase shifts and edge artifacts! 
+
 def resample_to_fixed_length(y, target_len, verbose=False):
     """Resample a 1-D signal to a fixed sample count via linear interpolation.
 

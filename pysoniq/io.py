@@ -9,9 +9,6 @@ class Signal:
         self.y = y
         self.sr = sr
 
-def load_signal(path): 
-    y, sr = load_audio(path)
-    return Signal(y, sr) 
 
 def load_audio(filepath):
     """
@@ -27,20 +24,122 @@ def load_audio(filepath):
     Supports: .wav, .mp3
     """
     filepath = Path(filepath)
-    
+    samplerate = _sample_rate(filepath)
+
+
+    # bind native sr for silent default in fourier sr-dependent functions
+    from . import fourier
+    fourier.set_native_sr(samplerate)
+
     if filepath.suffix.lower() == '.wav':
-        return _load_wav(filepath)
+        return _load_wav(filepath, samplerate)
     elif filepath.suffix.lower() == '.mp3':
-        return _load_mp3(filepath)
+        return _load_mp3(filepath, samplerate)
     else:
         raise ValueError(f"Unsupported format: {filepath.suffix}")
 
-def _load_wav(filepath):
-    """Load WAV file using wave module"""
+
+def load_signal(path): 
+    y, sr = load_audio(path)
+    return Signal(y, sr) 
+
+
+def _sample_rate(filepath):
+    """Extract native sample rate from audio file without decoding.
+    
+    Args:
+        filepath: str or Path to audio file
+    
+    Returns:
+        int: sample rate in Hz
+    
+    Raises:
+        ValueError: if format unsupported
+        RuntimeError: if probe fails
+    """
+    filepath = Path(filepath)
+    
+    if filepath.suffix.lower() == '.wav':
+        return _sample_rate_wav(filepath)
+    elif filepath.suffix.lower() == '.mp3':
+        return _sample_rate_mp3(filepath)
+    else:
+        raise ValueError(f"Unsupported format: {filepath.suffix}")
+
+
+def _sample_rate_wav(filepath):
+    """Extract sample rate from WAV file metadata.
+    
+    Args:
+        filepath: Path to WAV file
+    
+    Returns:
+        int: sample rate in Hz
+    """
+    with wave.open(str(filepath), 'rb') as wav:
+        return wav.getframerate()
+
+
+def _sample_rate_mp3(filepath):
+    """Extract sample rate from MP3 file via ffprobe.
+    
+    Args:
+        filepath: Path to MP3 file
+    
+    Returns:
+        int: sample rate in Hz
+    
+    Raises:
+        RuntimeError: if ffprobe unavailable or fails
+    """
+    import subprocess
+    
+    try:
+        subprocess.run(
+            ["ffmpeg", "-version"],
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+            check=True
+        )
+    except (FileNotFoundError, subprocess.CalledProcessError):
+        raise RuntimeError(
+            "ffmpeg not found. Install from https://ffmpeg.org/"
+        )
+    
+    probe_cmd = [
+        "ffprobe",
+        "-v", "error",
+        "-select_streams", "a:0",
+        "-show_entries", "stream=sample_rate",
+        "-of", "default=noprint_wrappers=1:nokey=1",
+        str(filepath)
+    ]
+    
+    probe_result = subprocess.run(
+        probe_cmd,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True
+    )
+    
+    if probe_result.returncode != 0:
+        raise RuntimeError(f"ffprobe failed: {probe_result.stderr}")
+    
+    return int(probe_result.stdout.strip())
+
+
+def _load_wav(filepath, samplerate):
+    """Load WAV file using wave module
+
+    Args:
+    filepath: Path object
+    samplerate: int, pre-extracted sample rate in Hz
+    
+    """
     with wave.open(str(filepath), 'rb') as wav:
         n_channels = wav.getnchannels()
         sampwidth = wav.getsampwidth()
-        framerate = wav.getframerate()
+        # framerate = wav.getframerate()
         n_frames = wav.getnframes()
         
         # Read raw data
@@ -75,49 +174,54 @@ def _load_wav(filepath):
     if n_channels > 1:
         audio = audio.reshape(-1, n_channels)
     
-    return audio, framerate
+    return audio, samplerate
 
 # Adding support for mp3 files using ffmpeg
 
-def _load_mp3(filepath):
-    """Load MP3 file using ffmpeg (mono output)"""
+def _load_mp3(filepath, samplerate):
+    """Load MP3 file using ffmpeg (mono output)
+            
+    Args:
+        filepath: Path object
+        samplerate: int, pre-extracted sample rate in Hz
+    """
     import subprocess
-    from pathlib import Path
+    # from pathlib import Path
     
-    filepath = Path(filepath)
+    # filepath = Path(filepath)
     
-    # Check ffmpeg availability
-    try:
-        subprocess.run(["ffmpeg", "-version"], 
-                      stdout=subprocess.DEVNULL, 
-                      stderr=subprocess.DEVNULL,
-                      check=True)
-    except (FileNotFoundError, subprocess.CalledProcessError):
-        raise RuntimeError(
-            "ffmpeg not found. Install from https://ffmpeg.org/"
-        )
+    # # Check ffmpeg availability
+    # try:
+    #     subprocess.run(["ffmpeg", "-version"], 
+    #                   stdout=subprocess.DEVNULL, 
+    #                   stderr=subprocess.DEVNULL,
+    #                   check=True)
+    # except (FileNotFoundError, subprocess.CalledProcessError):
+    #     raise RuntimeError(
+    #         "ffmpeg not found. Install from https://ffmpeg.org/"
+    #     )
     
-    # Probe for sample rate
-    probe_cmd = [
-        "ffprobe",
-        "-v", "error",
-        "-select_streams", "a:0",
-        "-show_entries", "stream=sample_rate",
-        "-of", "default=noprint_wrappers=1:nokey=1",
-        str(filepath)
-    ]
+    # # Probe for sample rate
+    # probe_cmd = [
+    #     "ffprobe",
+    #     "-v", "error",
+    #     "-select_streams", "a:0",
+    #     "-show_entries", "stream=sample_rate",
+    #     "-of", "default=noprint_wrappers=1:nokey=1",
+    #     str(filepath)
+    # ]
     
-    probe_result = subprocess.run(
-        probe_cmd,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-        text=True
-    )
+    # probe_result = subprocess.run(
+    #     probe_cmd,
+    #     stdout=subprocess.PIPE,
+    #     stderr=subprocess.PIPE,
+    #     text=True
+    # )
     
-    if probe_result.returncode != 0:
-        raise RuntimeError(f"ffprobe failed: {probe_result.stderr}")
+    # if probe_result.returncode != 0:
+    #     raise RuntimeError(f"ffprobe failed: {probe_result.stderr}")
     
-    samplerate = int(probe_result.stdout.strip())
+    # samplerate = int(probe_result.stdout.strip())
     
     # Decode audio to mono PCM
     decode_cmd = [
@@ -182,8 +286,11 @@ def _save_wav(filepath, audio, samplerate):
         wav.writeframes(audio_int16.tobytes())
 
 
-# (つ -' o '- )つ    (つ -' ~ '- )つ
-#           (つ -' x '- )つ    (つ -' 3 '- )つ
+# (つ -' o '- )つ                 (つ -' ~ '- )つ
+#                 (つ -' x '- )つ                 (つ -' 3 '- )つ
+
+
+# SEGMENTATION and various things for YAAAT and other applications
 
 # TODO: Refactor load_segment (and load_audio) to return a Signal object instead
 # of a raw (audio, samplerate) tuple once BaseLayer is refactored to accept Signal
@@ -221,11 +328,12 @@ def load_segment(filepath, start_sec, end_sec):
         )
 
     filepath = Path(filepath)
+    samplerate = _sample_rate(filepath)
 
     if filepath.suffix.lower() == '.wav':
-        return _load_wav_segment(filepath, start_sec, end_sec)
+        return _load_wav_segment(filepath, start_sec, end_sec, samplerate)
     elif filepath.suffix.lower() == '.mp3':
-        return _load_mp3_segment(filepath, start_sec, end_sec)
+        return _load_mp3_segment(filepath, start_sec, end_sec, samplerate)
     else:
         raise ValueError(f"Unsupported format: {filepath.suffix}")
 
@@ -233,7 +341,7 @@ def load_segment(filepath, start_sec, end_sec):
 ##    <(''<)    <( ' ' )>    (> '')>
 
 
-def _load_wav_segment(filepath, start_sec, end_sec):
+def _load_wav_segment(filepath, start_sec, end_sec, samplerate):
     """Load a frame-range segment from a WAV file using wave module seeking.
 
     Uses wave.setpos() to seek directly to the start frame, then reads only
@@ -251,18 +359,17 @@ def _load_wav_segment(filepath, start_sec, end_sec):
     with wave.open(str(filepath), 'rb') as wav:
         n_channels = wav.getnchannels()
         sampwidth  = wav.getsampwidth()
-        framerate  = wav.getframerate()
         n_frames   = wav.getnframes()
 
         # Convert time bounds to frame indices, clamped to file length
-        start_frame = max(0, int(start_sec * framerate))
-        end_frame   = min(n_frames, int(end_sec * framerate))
+        start_frame = max(0, int(start_sec * samplerate))
+        end_frame   = min(n_frames, int(end_sec * samplerate))
         n_read      = end_frame - start_frame
 
         if n_read <= 0:
             raise ValueError(
                 f"Segment [{start_sec:.4f}, {end_sec:.4f}] yields 0 frames "
-                f"in file {filepath.name} (framerate={framerate}, "
+                f"in file {filepath.name} (samplerate={samplerate}, "
                 f"n_frames={n_frames})"
             )
 
@@ -301,7 +408,7 @@ def _load_wav_segment(filepath, start_sec, end_sec):
     if n_channels > 1:
         audio = audio.reshape(-1, n_channels)
 
-    return audio, framerate
+    return audio, samplerate
 
 
 # (つ -' _ '- )つ    (つ -' _ '- )つ
@@ -343,27 +450,27 @@ def _load_mp3_segment(filepath, start_sec, end_sec):
             "ffmpeg not found. Install from https://ffmpeg.org/"
         )
 
-    # Probe sample rate — same as _load_mp3
-    probe_cmd = [
-        "ffprobe",
-        "-v", "error",
-        "-select_streams", "a:0",
-        "-show_entries", "stream=sample_rate",
-        "-of", "default=noprint_wrappers=1:nokey=1",
-        str(filepath)
-    ]
+    # # Probe sample rate — same as _load_mp3
+    # probe_cmd = [
+    #     "ffprobe",
+    #     "-v", "error",
+    #     "-select_streams", "a:0",
+    #     "-show_entries", "stream=sample_rate",
+    #     "-of", "default=noprint_wrappers=1:nokey=1",
+    #     str(filepath)
+    # ]
 
-    probe_result = subprocess.run(
-        probe_cmd,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-        text=True
-    )
+    # probe_result = subprocess.run(
+    #     probe_cmd,
+    #     stdout=subprocess.PIPE,
+    #     stderr=subprocess.PIPE,
+    #     text=True
+    # )
 
-    if probe_result.returncode != 0:
-        raise RuntimeError(f"ffprobe failed: {probe_result.stderr}")
+    # if probe_result.returncode != 0:
+    #     raise RuntimeError(f"ffprobe failed: {probe_result.stderr}")
 
-    samplerate = int(probe_result.stdout.strip())
+    # samplerate = int(probe_result.stdout.strip())
 
     # Decode only the requested segment via -ss (seek) and -t (duration)
     decode_cmd = [

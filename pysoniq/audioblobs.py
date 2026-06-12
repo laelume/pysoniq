@@ -1,4 +1,4 @@
-# Copyright © 2026 laelume All Rights Reserved.
+# Copyright 2026 laelume. 
 # ==== ==== ====
 # pysoniq/audioblobs.py
 # Audio blob generator — mirrors sklearn.datasets.make_blobs API.

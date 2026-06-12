@@ -1,5 +1,4 @@
-# Copyright (c) 2025 laelume | Ashlae Blum'e 
-# Licensed under the MIT License
+# Copyright 2025 laelume aka Ashlae Blum'e. Licensed under MIT License. 
 
 """pysoniq - Lightweight cross-platform audio signal analysis and playback library"""
 

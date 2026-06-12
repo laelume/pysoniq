@@ -2,8 +2,11 @@
 Display utilities
 """
 
-def spectroviz(data, sr, hop_length, x_axis='time', y_axis='hz', 
-            cmap='viridis', ax=None, **kwargs):
+def spectroviz(data, sr=None, hop_length=None, 
+            x_axis='time', y_axis='hz', 
+            ax=None, filepath=None, 
+            cmap='viridis', **kwargs
+):
     """
     Display a spectrogram
     
@@ -31,6 +34,20 @@ def spectroviz(data, sr, hop_length, x_axis='time', y_axis='hz',
     im : matplotlib image
         Image object
     """
+
+
+    # resolve sr: explicit -> filepath probe -> module native -> raise
+    if sr is None:
+        if filepath is not None:
+            from .io import _sample_rate
+            sr = _sample_rate(filepath)
+        else:
+            from .fourier import get_native_sr
+            sr = get_native_sr()
+            if sr is None:
+                raise ValueError("sr unresolvable: provide sr, filepath, or call set_native_sr()")
+
+
     import matplotlib.pyplot as plt
     
     if ax is None:
