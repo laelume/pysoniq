@@ -4,7 +4,6 @@
 
 import numpy as np
 from scipy import signal
-from scipy.io import wavfile
 from .utils import hz_to_mel, mel_to_hz, linear_to_db
 
 
@@ -12,7 +11,6 @@ from .utils import hz_to_mel, mel_to_hz, linear_to_db
 # module-level native sample rate state
 # populated by set_native_sr(); read silently by sr-dependent functions
 # === === === === === === === ===
-
 _NATIVE_SR = None
 
 
@@ -39,9 +37,10 @@ def get_native_sr():
     return _NATIVE_SR
 
 
-def stft(y, n_fft=1024, hop_length=None, window='hann'):
+def complex_stft(y, n_fft=1024, hop_length=None, window='hann'):
     """
-    Complex-valued short-time Fourier transform (retains magnitude and phase information)
+    Complex-valued short-time Fourier transform;
+    Zxx is a complex-valued matrix that retains magnitude and phase information
     
     Parameters
     ----------
@@ -82,6 +81,51 @@ def stft(y, n_fft=1024, hop_length=None, window='hann'):
                             padded=False)
     
     return Zxx
+
+def real_stft(y, n_fft=1024, hop_length=None, window='hann'):
+    """
+    Real-valued short-time Fourier transform
+    
+    Parameters
+    ----------
+    y : np.ndarray
+        Audio time series
+    n_fft : int
+        FFT window size
+    hop_length : int or None
+        Number of samples between frames
+    window : str
+        Window type ('hann', 'hamming', 'blackman')
+        
+    Returns
+    -------
+    stft_matrix : np.ndarray (real)
+    f: 
+    t: 
+    """
+    if hop_length is None:
+        hop_length = n_fft // 4
+    
+    # Create window
+    if window == 'hann':
+        win = np.hanning(n_fft)
+    elif window == 'hamming':
+        win = np.hamming(n_fft)
+    elif window == 'blackman':
+        win = np.blackman(n_fft)
+    else:
+        win = np.ones(n_fft)
+    
+    # Compute complex STFT
+    f, t, Zxx = signal.stft(y, 
+                            nperseg=n_fft, 
+                            noverlap=n_fft - hop_length,
+                            window=win,
+                            return_onesided=True,
+                            boundary=None,
+                            padded=False)
+    
+    return np.abs(Zxx), f, t
 
 
 def magnitude_stft(y, n_fft=1024, hop_length=None, window='hann'):
