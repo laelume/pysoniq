@@ -1,6 +1,6 @@
 # pysoniq
 
-Minimal Pythonic cross-platform audio analysis and playback library.
+Minimal Pythonic cross-platform audio analysis, synthesis, and playback library.
 
 - **Cross-platform** - Windows, macOS, Linux
 - **Minimal dependencies** - numpy, scipy, wave, ffmpeg
@@ -17,7 +17,6 @@ WIP: For MP3 support, install ffmpeg: https://ffmpeg.org/
 ```python
 import pysoniq
 import numpy as np
-import wave
 
 # Play WAV file
 pysoniq.play('audio.wav')
@@ -35,52 +34,23 @@ pysoniq.play(audio, sr)
 # Stop
 pysoniq.stop()
 
-# Make audio blobs for model input
-X, y = make_audioblobs(
-    source       = "path/to/wav_dir",
-    n_fft        = 512,
-    metric       = "euclidean",
-    n_classes    = 10,
-    random_state = 42,
-    verbose      = True,
-)
-```
-
-## Features
-
-**Playback**
-```python
-pysoniq.play(data, samplerate)   # Play audio
-pysoniq.stop()                   # Stop playback
-pysoniq.pause()                  # Pause
-pysoniq.resume()                 # Resume
-```
-
-**Looping**
-```python
-pysoniq.set_loop(True)   # Enable loop
-pysoniq.is_looping()     # Check status
-```
-
-**Gain Control**
-```python
-pysoniq.set_gain(0.5)           # 50% volume
-pysoniq.set_volume_db(-6.0)     # Set dB
-audio = pysoniq.adjust_gain_level(audio, 1.5)
-```
-
-**Audio I/O**
-```python
-audio, sr = pysoniq.load_audio('file.wav')  # or .mp3
-pysoniq.save_audio('output.wav', audio, sr)
-```
-
-**Fourier Analysis**
-```python
 import pysoniq.fourier as pf
 
 S = pf.magnitude_stft(audio, n_fft=2048)
 S_db = pf.amplitude_to_db(S)
+
+import pysoniq.audioblobs
+
+# Make audio blobs for model input
+X, y = make_audioblobs(
+    source       = "path/to/wav_dir", # path to source audio (files or subdirs); output mirrors input tree
+    n_fft        = 512,               # number of fft bins (frequency resolution)
+    metric       = "euclidean",       # distance metric between samples
+    n_classes    = 10,                # arbitrary data-driven class prototype
+    aggregation  = "frame",           # segmentation resolution; supports frame and syllable
+    random_state = 42,                # random seed for repeatability
+    verbose      = True,              # include logging
+)
 ```
 
 ## Platform Requirements
@@ -88,7 +58,6 @@ S_db = pf.amplitude_to_db(S)
 - **Windows**: Built-in (winsound)
 - **macOS**: Built-in (afplay)
 - **Linux**: ALSA (aplay) - usually pre-installed
-
 - **MP3**: ffmpeg (install separately)
 
 ## Limitations
@@ -97,10 +66,7 @@ S_db = pf.amplitude_to_db(S)
 - Pause/resume uses time-based estimation
 - Gain changes apply on next loop iteration
 
-## License
 
-MIT
+## Author & License
 
-## Author
-
-laelume
+Copyright 2025-2026 laelume. Licensed under MIT. 

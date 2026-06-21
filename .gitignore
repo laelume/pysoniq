@@ -5,8 +5,11 @@
 
 /build/
 /dist/
-*.egg-info/
+*.egg-info
 .eggs/
+*.egg
 
 .DS_Store
 Thumbs.db
+
+/synthesis/

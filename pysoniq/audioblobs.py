@@ -53,10 +53,14 @@ PathLike      = Union[str, Path]
 
 def _discover_wavs(root: Path) -> dict[str, list[Path]]:
     """
-    Recursively discover WAV files under root and mirror directory tree as class labels.
-
-    Returns a dict mapping class label strings to lists of WAV Paths.
-    Single-file input is mapped to a single class '0'.
+    Recursively discover WAV files under root and mirror directory tree.
+    
+    This is needed to maintain directory structure for making sure frames 
+    are split evenly in train/test splits, for source file lookup, 
+    annotation recall, and synthetic data generation. 
+    
+    Returns a dict mapping sequence id strings to lists of WAV Paths.
+    # idk about this >> Single-file input is mapped to a single class '0'.
     """
     root = Path(root)
 
@@ -324,7 +328,7 @@ def _extract_frame_features(
 # S Y L L A B L E   L E V E L   F E A T U R E S
 # computes feature sequence over full waveform as one unit —
 # no fixed-length frame segmentation. each syllable yields a
-# (n_frames, n_features) sequence for DTW-based distance computation.
+# (n_frames, n_features) sequence for metric-based distance computation.
 # === === === === === === === ===
 
 def _extract_syllable_features(
@@ -337,11 +341,11 @@ def _extract_syllable_features(
     """
     Extract a feature sequence from a full waveform for syllable-level analysis.
 
-    Unlike _extract_features, no fixed-length segmentation is applied —
-    the full waveform is analyzed as one unit with hop_length=n_fft//4
+    Unlike _extract_frame_features, no segmentation is applied —
+    the full syllable waveform is analyzed as one unit with hop_length=n_fft//4
     to produce a temporal sequence of feature vectors.
     Returns (n_frames, n_features) where n_frames varies per syllable.
-    Intended for use with DTW-based distance metrics.
+    Intended for use with various optional distance metrics.
     Reference: Sakoe & Chiba (1978). DOI: https://doi.org/10.1109/TASSP.1978.1163055
     """
     if feature == "raw":
