@@ -37,6 +37,52 @@ def get_native_sr():
     return _NATIVE_SR
 
 
+# Keep oroginal stft in-placce until fully refactored, if ever? 
+def stft(y, n_fft=1024, hop_length=None, window='hann'):
+    """
+    Complex-valued short-time Fourier transform;
+    Zxx is a complex-valued matrix that retains magnitude and phase information
+    
+    Parameters
+    ----------
+    y : np.ndarray
+        Audio time series
+    n_fft : int
+        FFT window size
+    hop_length : int or None
+        Number of samples between frames
+    window : str
+        Window type ('hann', 'hamming', 'blackman')
+        
+    Returns
+    -------
+    stft_matrix : np.ndarray (complex)
+        STFT matrix
+    """
+    if hop_length is None:
+        hop_length = n_fft // 4
+    
+    # Create window
+    if window == 'hann':
+        win = np.hanning(n_fft)
+    elif window == 'hamming':
+        win = np.hamming(n_fft)
+    elif window == 'blackman':
+        win = np.blackman(n_fft)
+    else:
+        win = np.ones(n_fft)
+    
+    # Compute STFT
+    f, t, Zxx = signal.stft(y, 
+                            nperseg=n_fft, 
+                            noverlap=n_fft - hop_length,
+                            window=win,
+                            return_onesided=True,
+                            boundary=None,
+                            padded=False)
+    
+    return Zxx
+
 def complex_stft(y, n_fft=1024, hop_length=None, window='hann'):
     """
     Complex-valued short-time Fourier transform;
