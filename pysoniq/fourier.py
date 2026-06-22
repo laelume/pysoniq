@@ -37,7 +37,7 @@ def get_native_sr():
     return _NATIVE_SR
 
 
-# Keep oroginal stft in-placce until fully refactored, if ever? 
+# Keep original stft in-placce until fully refactored, if ever? 
 def stft(y, n_fft=1024, hop_length=None, window='hann'):
     """
     Complex-valued short-time Fourier transform;
@@ -161,15 +161,34 @@ def real_stft(y, n_fft=1024, hop_length=None, window='hann'):
         win = np.blackman(n_fft)
     else:
         win = np.ones(n_fft)
-    
-    # Compute complex STFT
-    f, t, Zxx = signal.stft(y, 
-                            nperseg=n_fft, 
-                            noverlap=n_fft - hop_length,
-                            window=win,
-                            return_onesided=True,
-                            boundary=None,
-                            padded=False)
+
+
+    # real_stft — resolve fs from module native sr (after window is built, before scipy call)
+    # read module native sr silently (set via set_native_sr); scipy defaults
+    # For consistency and to surface the failure instead of producing a wrong axis:
+    if _NATIVE_SR is None:
+        raise ValueError("sr unresolvable: call set_native_sr() or load_audio first")
+    fs = _NATIVE_SR
+
+    f, t, Zxx = signal.stft(
+        y,
+        nperseg=n_fft,
+        noverlap=n_fft - hop_length,
+        window=win,
+        fs=fs,
+        return_onesided=True,
+        boundary=None,
+        padded=False
+        )
+
+    # # Compute complex STFT
+    # f, t, Zxx = signal.stft(y, 
+    #                         nperseg=n_fft, 
+    #                         noverlap=n_fft - hop_length,
+    #                         window=win,
+    #                         return_onesided=True,
+    #                         boundary=None,
+    #                         padded=False)
     
     return np.abs(Zxx), f, t
 
