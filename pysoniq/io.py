@@ -39,8 +39,8 @@ def load_audio(filepath):
         raise ValueError(f"Unsupported format: {filepath.suffix}")
 
 
-def load_signal(path): 
-    y, sr = load_audio(path)
+def load_signal(filepath): 
+    y, sr = load_audio(filepath)
     return Signal(y, sr) 
 
 

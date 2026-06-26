@@ -1,6 +1,8 @@
 """Utility functions"""
 
 import numpy as np
+from scipy import signal
+from .io import load_audio
 
 def to_pcm(data, target_bits=16):
     """
@@ -163,4 +165,39 @@ def resample_to_fixed_length(y, target_len, verbose=False):
         # verbose: report length change per call
         print(f"[resample] {n} -> {target_len}")
     return y_rs
-# ==== ==== ==== ====
+
+
+
+
+def bandpass(audio_filepath, lowcut, highcut, order=4):
+    """
+    Apply a bandpass filter to an audio file and return the filtered audio array.
+    
+    Args:
+        audio_file: Path to audio file
+        lowcut: Low frequency cutoff in Hz
+        highcut: High frequency cutoff in Hz  
+        order: Filter order (higher = steeper rolloff)
+        
+    Returns:
+        numpy.ndarray: Filtered audio data (not a tuple)
+    """
+    # Load audio
+    y, sr = io.load_signal(audio_filepath, sr=None)
+    
+    # Design Butterworth bandpass filter
+    nyquist = sr / 2
+    low = lowcut / nyquist
+    high = highcut / nyquist
+    
+    # Ensure frequencies are within valid range
+    low = max(0.01, min(low, 0.99))
+    high = max(low + 0.01, min(high, 0.99))
+    
+    # Create filter coefficients
+    b, a = signal.butter(order, [low, high], btype='band')
+    
+    # Apply filter
+    bandpassed_audio = signal.filtfilt(b, a, y)
+    
+    return bandpassed_audio  # Return only the bandpassed audio array
