@@ -1,0 +1,6 @@
+pysoniq.stop
+============
+
+.. currentmodule:: pysoniq
+
+.. autofunction:: stop

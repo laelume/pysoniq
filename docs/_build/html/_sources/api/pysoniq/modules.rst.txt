@@ -1,0 +1,7 @@
+pysoniq
+=======
+
+.. toctree::
+   :maxdepth: 4
+
+   pysoniq

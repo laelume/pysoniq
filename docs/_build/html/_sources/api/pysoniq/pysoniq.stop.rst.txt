@@ -1,0 +1,7 @@
+pysoniq.stop module
+===================
+
+.. automodule:: pysoniq.stop
+   :members:
+   :show-inheritance:
+   :undoc-members:

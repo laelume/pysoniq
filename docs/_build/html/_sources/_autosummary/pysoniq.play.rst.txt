@@ -1,0 +1,6 @@
+pysoniq.play
+============
+
+.. currentmodule:: pysoniq
+
+.. autofunction:: play

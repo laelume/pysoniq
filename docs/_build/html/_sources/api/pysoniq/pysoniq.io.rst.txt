@@ -1,0 +1,7 @@
+pysoniq.io module
+=================
+
+.. automodule:: pysoniq.io
+   :members:
+   :show-inheritance:
+   :undoc-members:

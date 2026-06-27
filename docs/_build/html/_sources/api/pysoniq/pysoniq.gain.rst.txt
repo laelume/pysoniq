@@ -1,0 +1,7 @@
+pysoniq.gain module
+===================
+
+.. automodule:: pysoniq.gain
+   :members:
+   :show-inheritance:
+   :undoc-members:

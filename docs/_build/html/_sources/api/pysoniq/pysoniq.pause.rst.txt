@@ -1,0 +1,7 @@
+pysoniq.pause module
+====================
+
+.. automodule:: pysoniq.pause
+   :members:
+   :show-inheritance:
+   :undoc-members:

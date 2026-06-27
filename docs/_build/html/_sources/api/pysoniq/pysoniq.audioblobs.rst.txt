@@ -1,0 +1,7 @@
+pysoniq.audioblobs module
+=========================
+
+.. automodule:: pysoniq.audioblobs
+   :members:
+   :show-inheritance:
+   :undoc-members:

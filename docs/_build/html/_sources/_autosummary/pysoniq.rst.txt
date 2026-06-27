@@ -1,0 +1,25 @@
+﻿pysoniq
+=======
+
+.. automodule:: pysoniq
+
+   
+   
+   .. rubric:: Modules
+
+   .. autosummary::
+      :toctree:
+      :recursive:
+   
+      audioblobs
+      fourier
+      gain
+      io
+      loop
+      pause
+      play
+      stop
+      utils
+      visualize
+   
+   

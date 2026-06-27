@@ -1,0 +1,6 @@
+pysoniq.pause
+=============
+
+.. currentmodule:: pysoniq
+
+.. autofunction:: pause

@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>pysoniq.play &#8212; pysoniq 0.1.9 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=5ecbeea2" />
+    <link rel="stylesheet" type="text/css" href="../../_static/basic.css?v=b08954a9" />
+    <link rel="stylesheet" type="text/css" href="../../_static/alabaster.css?v=27fed22d" />
+    <script src="../../_static/documentation_options.js?v=8618f531"></script>
+    <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+   
+  <link rel="stylesheet" href="../../_static/custom.css" type="text/css" />
+  
+
+  
+  
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <h1>Source code for pysoniq.play</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;Audio playback functionality&quot;&quot;&quot;</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">sys</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pathlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">Path</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.io</span><span class="w"> </span><span class="kn">import</span> <span class="n">load_audio</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.</span><span class="w"> </span><span class="kn">import</span> <span class="n">loop</span> <span class="k">as</span> <span class="n">loop_module</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">to_pcm</span><span class="p">,</span> <span class="n">int32_to_24bit_bytes</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.</span><span class="w"> </span><span class="kn">import</span> <span class="n">pause</span> <span class="k">as</span> <span class="n">pause_module</span>
+
+<span class="c1"># Track current playback process for stopping</span>
+<span class="n">_current_process</span> <span class="o">=</span> <span class="kc">None</span>
+
+<div class="viewcode-block" id="play">
+<a class="viewcode-back" href="../../api/pysoniq/pysoniq.play.html#pysoniq.play">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">play</span><span class="p">(</span><span class="n">audio_data</span><span class="p">,</span> <span class="n">samplerate</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">blocking</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Play audio from file or array</span>
+<span class="sd">    </span>
+<span class="sd">    Args:</span>
+<span class="sd">        audio_data: str/Path (audio file) or numpy array (audio audio_data)</span>
+<span class="sd">        samplerate: int, required if audio_data is array</span>
+<span class="sd">        blocking: bool, if True wait for playback to finish</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Reset stop flag when starting new playback</span>
+    <span class="n">loop_module</span><span class="o">.</span><span class="n">reset_stop</span><span class="p">()</span>
+    
+    <span class="c1"># If string/Path, load file first</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">audio_data</span><span class="p">,</span> <span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="n">Path</span><span class="p">)):</span>
+        <span class="n">audio_array</span><span class="p">,</span> <span class="n">sr</span> <span class="o">=</span> <span class="n">load_audio</span><span class="p">(</span><span class="n">audio_data</span><span class="p">)</span>
+
+        <span class="c1"># Store state for pause/resume</span>
+        <span class="n">pause_module</span><span class="o">.</span><span class="n">set_playback_state</span><span class="p">(</span><span class="n">audio_array</span><span class="p">,</span> <span class="n">sr</span><span class="p">)</span>
+        
+        <span class="c1"># If looping, start loop thread</span>
+        <span class="k">if</span> <span class="n">loop_module</span><span class="o">.</span><span class="n">is_looping</span><span class="p">():</span>
+            <span class="n">loop_module</span><span class="o">.</span><span class="n">start_loop</span><span class="p">(</span><span class="n">audio_array</span><span class="p">,</span> <span class="n">sr</span><span class="p">,</span> <span class="n">_play_array</span><span class="p">)</span>
+            <span class="k">return</span>
+        
+        <span class="k">return</span> <span class="n">_play_array</span><span class="p">(</span><span class="n">audio_array</span><span class="p">,</span> <span class="n">sr</span><span class="p">,</span> <span class="n">blocking</span><span class="p">)</span>
+    
+    <span class="c1"># Otherwise assume numpy array</span>
+    <span class="k">if</span> <span class="n">samplerate</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;samplerate required when playing numpy array&quot;</span><span class="p">)</span>
+    
+    <span class="c1"># Store state for pause/resume</span>
+    <span class="n">pause_module</span><span class="o">.</span><span class="n">set_playback_state</span><span class="p">(</span><span class="n">audio_data</span><span class="p">,</span> <span class="n">samplerate</span><span class="p">)</span>
+
+    <span class="c1"># If looping, start loop thread</span>
+    <span class="k">if</span> <span class="n">loop_module</span><span class="o">.</span><span class="n">is_looping</span><span class="p">():</span>
+        <span class="n">loop_module</span><span class="o">.</span><span class="n">start_loop</span><span class="p">(</span><span class="n">audio_data</span><span class="p">,</span> <span class="n">samplerate</span><span class="p">,</span> <span class="n">_play_array</span><span class="p">)</span>
+        <span class="k">return</span>
+    
+    <span class="k">return</span> <span class="n">_play_array</span><span class="p">(</span><span class="n">audio_data</span><span class="p">,</span> <span class="n">samplerate</span><span class="p">,</span> <span class="n">blocking</span><span class="p">)</span></div>
+
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_play_array</span><span class="p">(</span><span class="n">audio_data</span><span class="p">,</span> <span class="n">samplerate</span><span class="p">,</span> <span class="n">blocking</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Internal: play numpy array&quot;&quot;&quot;</span>
+    <span class="c1"># Check if stopped</span>
+    <span class="k">if</span> <span class="n">loop_module</span><span class="o">.</span><span class="n">is_stopped</span><span class="p">():</span>
+        <span class="k">return</span>
+    <span class="c1"># Apply main gain from gain module</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">.</span><span class="w"> </span><span class="kn">import</span> <span class="n">gain</span> <span class="k">as</span> <span class="n">gain_module</span>
+    <span class="n">audio_data</span> <span class="o">=</span> <span class="n">gain_module</span><span class="o">.</span><span class="n">adjust_gain_level</span><span class="p">(</span><span class="n">audio_data</span><span class="p">)</span>
+
+    <span class="c1"># Determine channels</span>
+    <span class="n">n_channels</span> <span class="o">=</span> <span class="mi">1</span> <span class="k">if</span> <span class="n">audio_data</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">1</span> <span class="k">else</span> <span class="n">audio_data</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+    
+    <span class="c1"># Convert to mono if needed</span>
+    <span class="k">if</span> <span class="n">audio_data</span><span class="o">.</span><span class="n">ndim</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="n">audio_data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">audio_data</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+    
+    <span class="c1"># Convert to PCM</span>
+    <span class="n">sampwidth</span><span class="p">,</span> <span class="n">audio_data_int</span> <span class="o">=</span> <span class="n">to_pcm</span><span class="p">(</span><span class="n">audio_data</span><span class="p">)</span>
+    
+    <span class="c1"># Platform-specific playback</span>
+    <span class="k">if</span> <span class="n">sys</span><span class="o">.</span><span class="n">platform</span> <span class="o">==</span> <span class="s1">&#39;win32&#39;</span><span class="p">:</span>
+        <span class="n">_play_windows</span><span class="p">(</span><span class="n">audio_data_int</span><span class="p">,</span> <span class="n">samplerate</span><span class="p">,</span> <span class="n">sampwidth</span><span class="p">,</span> <span class="n">n_channels</span><span class="p">,</span> <span class="n">blocking</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">sys</span><span class="o">.</span><span class="n">platform</span> <span class="o">==</span> <span class="s1">&#39;darwin&#39;</span><span class="p">:</span>
+        <span class="n">_play_macos</span><span class="p">(</span><span class="n">audio_data_int</span><span class="p">,</span> <span class="n">samplerate</span><span class="p">,</span> <span class="n">sampwidth</span><span class="p">,</span> <span class="n">n_channels</span><span class="p">,</span> <span class="n">blocking</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>  <span class="c1"># Linux</span>
+        <span class="n">_play_linux</span><span class="p">(</span><span class="n">audio_data_int</span><span class="p">,</span> <span class="n">samplerate</span><span class="p">,</span> <span class="n">sampwidth</span><span class="p">,</span> <span class="n">n_channels</span><span class="p">,</span> <span class="n">blocking</span><span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_play_windows</span><span class="p">(</span><span class="n">audio_data</span><span class="p">,</span> <span class="n">samplerate</span><span class="p">,</span> <span class="n">sampwidth</span><span class="p">,</span> <span class="n">n_channels</span><span class="p">,</span> <span class="n">blocking</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Windows playback using winsound&quot;&quot;&quot;</span>
+    <span class="kn">import</span><span class="w"> </span><span class="nn">winsound</span>
+    <span class="kn">import</span><span class="w"> </span><span class="nn">wave</span>
+    <span class="kn">import</span><span class="w"> </span><span class="nn">tempfile</span>
+    <span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+    
+    <span class="k">if</span> <span class="n">loop_module</span><span class="o">.</span><span class="n">is_stopped</span><span class="p">():</span>
+        <span class="k">return</span>
+    
+    <span class="k">with</span> <span class="n">tempfile</span><span class="o">.</span><span class="n">NamedTemporaryFile</span><span class="p">(</span><span class="n">suffix</span><span class="o">=</span><span class="s1">&#39;.wav&#39;</span><span class="p">,</span> <span class="n">delete</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+        <span class="n">temp_path</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">name</span>
+        
+        <span class="k">with</span> <span class="n">wave</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">temp_path</span><span class="p">,</span> <span class="s1">&#39;wb&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">wav</span><span class="p">:</span>
+            <span class="n">wav</span><span class="o">.</span><span class="n">setnchannels</span><span class="p">(</span><span class="n">n_channels</span><span class="p">)</span>
+            <span class="n">wav</span><span class="o">.</span><span class="n">setsampwidth</span><span class="p">(</span><span class="n">sampwidth</span><span class="p">)</span>
+            <span class="n">wav</span><span class="o">.</span><span class="n">setframerate</span><span class="p">(</span><span class="n">samplerate</span><span class="p">)</span>
+            
+            <span class="k">if</span> <span class="n">sampwidth</span> <span class="o">==</span> <span class="mi">3</span><span class="p">:</span>
+                <span class="n">wav</span><span class="o">.</span><span class="n">writeframes</span><span class="p">(</span><span class="n">int32_to_24bit_bytes</span><span class="p">(</span><span class="n">audio_data</span><span class="p">))</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">wav</span><span class="o">.</span><span class="n">writeframes</span><span class="p">(</span><span class="n">audio_data</span><span class="o">.</span><span class="n">tobytes</span><span class="p">())</span>
+    
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">flags</span> <span class="o">=</span> <span class="n">winsound</span><span class="o">.</span><span class="n">SND_FILENAME</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">blocking</span><span class="p">:</span>
+            <span class="n">flags</span> <span class="o">|=</span> <span class="n">winsound</span><span class="o">.</span><span class="n">SND_ASYNC</span>
+        
+        <span class="n">winsound</span><span class="o">.</span><span class="n">PlaySound</span><span class="p">(</span><span class="n">temp_path</span><span class="p">,</span> <span class="n">flags</span><span class="p">)</span>
+    <span class="k">finally</span><span class="p">:</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">blocking</span><span class="p">:</span>
+            <span class="kn">import</span><span class="w"> </span><span class="nn">threading</span>
+            <span class="k">def</span><span class="w"> </span><span class="nf">cleanup</span><span class="p">():</span>
+                <span class="kn">import</span><span class="w"> </span><span class="nn">time</span>
+                <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">audio_data</span><span class="p">)</span> <span class="o">/</span> <span class="n">samplerate</span> <span class="o">+</span> <span class="mf">0.5</span><span class="p">)</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">os</span><span class="o">.</span><span class="n">unlink</span><span class="p">(</span><span class="n">temp_path</span><span class="p">)</span>
+                <span class="k">except</span><span class="p">:</span>
+                    <span class="k">pass</span>
+            <span class="n">threading</span><span class="o">.</span><span class="n">Thread</span><span class="p">(</span><span class="n">target</span><span class="o">=</span><span class="n">cleanup</span><span class="p">,</span> <span class="n">daemon</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">os</span><span class="o">.</span><span class="n">unlink</span><span class="p">(</span><span class="n">temp_path</span><span class="p">)</span>
+            <span class="k">except</span><span class="p">:</span>
+                <span class="k">pass</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_play_macos</span><span class="p">(</span><span class="n">audio_data</span><span class="p">,</span> <span class="n">samplerate</span><span class="p">,</span> <span class="n">sampwidth</span><span class="p">,</span> <span class="n">n_channels</span><span class="p">,</span> <span class="n">blocking</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;macOS playback using afplay&quot;&quot;&quot;</span>
+    <span class="kn">import</span><span class="w"> </span><span class="nn">subprocess</span>
+    <span class="kn">import</span><span class="w"> </span><span class="nn">wave</span>
+    <span class="kn">import</span><span class="w"> </span><span class="nn">tempfile</span>
+    <span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+    
+    <span class="k">global</span> <span class="n">_current_process</span>
+    
+    <span class="k">with</span> <span class="n">tempfile</span><span class="o">.</span><span class="n">NamedTemporaryFile</span><span class="p">(</span><span class="n">suffix</span><span class="o">=</span><span class="s1">&#39;.wav&#39;</span><span class="p">,</span> <span class="n">delete</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+        <span class="n">temp_path</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">name</span>
+        
+        <span class="k">with</span> <span class="n">wave</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">temp_path</span><span class="p">,</span> <span class="s1">&#39;wb&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">wav</span><span class="p">:</span>
+            <span class="n">wav</span><span class="o">.</span><span class="n">setnchannels</span><span class="p">(</span><span class="n">n_channels</span><span class="p">)</span>
+            <span class="n">wav</span><span class="o">.</span><span class="n">setsampwidth</span><span class="p">(</span><span class="n">sampwidth</span><span class="p">)</span>
+            <span class="n">wav</span><span class="o">.</span><span class="n">setframerate</span><span class="p">(</span><span class="n">samplerate</span><span class="p">)</span>
+            
+            <span class="k">if</span> <span class="n">sampwidth</span> <span class="o">==</span> <span class="mi">3</span><span class="p">:</span>
+                <span class="n">wav</span><span class="o">.</span><span class="n">writeframes</span><span class="p">(</span><span class="n">int32_to_24bit_bytes</span><span class="p">(</span><span class="n">audio_data</span><span class="p">))</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">wav</span><span class="o">.</span><span class="n">writeframes</span><span class="p">(</span><span class="n">audio_data</span><span class="o">.</span><span class="n">tobytes</span><span class="p">())</span>
+    
+    <span class="k">try</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">blocking</span><span class="p">:</span>
+            <span class="n">_current_process</span> <span class="o">=</span> <span class="n">subprocess</span><span class="o">.</span><span class="n">Popen</span><span class="p">([</span><span class="s1">&#39;afplay&#39;</span><span class="p">,</span> <span class="n">temp_path</span><span class="p">])</span>
+            <span class="n">_current_process</span><span class="o">.</span><span class="n">wait</span><span class="p">()</span>
+            <span class="n">_current_process</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="n">os</span><span class="o">.</span><span class="n">unlink</span><span class="p">(</span><span class="n">temp_path</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">_current_process</span> <span class="o">=</span> <span class="n">subprocess</span><span class="o">.</span><span class="n">Popen</span><span class="p">([</span><span class="s1">&#39;afplay&#39;</span><span class="p">,</span> <span class="n">temp_path</span><span class="p">])</span>
+            <span class="kn">import</span><span class="w"> </span><span class="nn">threading</span>
+            <span class="k">def</span><span class="w"> </span><span class="nf">cleanup</span><span class="p">():</span>
+                <span class="kn">import</span><span class="w"> </span><span class="nn">time</span>
+                <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">audio_data</span><span class="p">)</span> <span class="o">/</span> <span class="n">samplerate</span> <span class="o">+</span> <span class="mf">0.5</span><span class="p">)</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">os</span><span class="o">.</span><span class="n">unlink</span><span class="p">(</span><span class="n">temp_path</span><span class="p">)</span>
+                <span class="k">except</span><span class="p">:</span>
+                    <span class="k">pass</span>
+            <span class="n">threading</span><span class="o">.</span><span class="n">Thread</span><span class="p">(</span><span class="n">target</span><span class="o">=</span><span class="n">cleanup</span><span class="p">,</span> <span class="n">daemon</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
+    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">os</span><span class="o">.</span><span class="n">unlink</span><span class="p">(</span><span class="n">temp_path</span><span class="p">)</span>
+        <span class="k">except</span><span class="p">:</span>
+            <span class="k">pass</span>
+        <span class="k">raise</span> <span class="n">e</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_play_linux</span><span class="p">(</span><span class="n">audio_data</span><span class="p">,</span> <span class="n">samplerate</span><span class="p">,</span> <span class="n">sampwidth</span><span class="p">,</span> <span class="n">n_channels</span><span class="p">,</span> <span class="n">blocking</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Linux playback using aplay&quot;&quot;&quot;</span>
+    <span class="kn">import</span><span class="w"> </span><span class="nn">subprocess</span>
+    <span class="kn">import</span><span class="w"> </span><span class="nn">wave</span>
+    <span class="kn">import</span><span class="w"> </span><span class="nn">tempfile</span>
+    <span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+    
+    <span class="k">global</span> <span class="n">_current_process</span>
+    
+    <span class="k">with</span> <span class="n">tempfile</span><span class="o">.</span><span class="n">NamedTemporaryFile</span><span class="p">(</span><span class="n">suffix</span><span class="o">=</span><span class="s1">&#39;.wav&#39;</span><span class="p">,</span> <span class="n">delete</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+        <span class="n">temp_path</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">name</span>
+        
+        <span class="k">with</span> <span class="n">wave</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">temp_path</span><span class="p">,</span> <span class="s1">&#39;wb&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">wav</span><span class="p">:</span>
+            <span class="n">wav</span><span class="o">.</span><span class="n">setnchannels</span><span class="p">(</span><span class="n">n_channels</span><span class="p">)</span>
+            <span class="n">wav</span><span class="o">.</span><span class="n">setsampwidth</span><span class="p">(</span><span class="n">sampwidth</span><span class="p">)</span>
+            <span class="n">wav</span><span class="o">.</span><span class="n">setframerate</span><span class="p">(</span><span class="n">samplerate</span><span class="p">)</span>
+            
+            <span class="k">if</span> <span class="n">sampwidth</span> <span class="o">==</span> <span class="mi">3</span><span class="p">:</span>
+                <span class="n">wav</span><span class="o">.</span><span class="n">writeframes</span><span class="p">(</span><span class="n">int32_to_24bit_bytes</span><span class="p">(</span><span class="n">audio_data</span><span class="p">))</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">wav</span><span class="o">.</span><span class="n">writeframes</span><span class="p">(</span><span class="n">audio_data</span><span class="o">.</span><span class="n">tobytes</span><span class="p">())</span>
+    
+    <span class="k">try</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">blocking</span><span class="p">:</span>
+            <span class="n">_current_process</span> <span class="o">=</span> <span class="n">subprocess</span><span class="o">.</span><span class="n">Popen</span><span class="p">([</span><span class="s1">&#39;aplay&#39;</span><span class="p">,</span> <span class="n">temp_path</span><span class="p">])</span>
+            <span class="n">_current_process</span><span class="o">.</span><span class="n">wait</span><span class="p">()</span>
+            <span class="n">_current_process</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="n">os</span><span class="o">.</span><span class="n">unlink</span><span class="p">(</span><span class="n">temp_path</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">_current_process</span> <span class="o">=</span> <span class="n">subprocess</span><span class="o">.</span><span class="n">Popen</span><span class="p">([</span><span class="s1">&#39;aplay&#39;</span><span class="p">,</span> <span class="n">temp_path</span><span class="p">])</span>
+            <span class="kn">import</span><span class="w"> </span><span class="nn">threading</span>
+            <span class="k">def</span><span class="w"> </span><span class="nf">cleanup</span><span class="p">():</span>
+                <span class="kn">import</span><span class="w"> </span><span class="nn">time</span>
+                <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">audio_data</span><span class="p">)</span> <span class="o">/</span> <span class="n">samplerate</span> <span class="o">+</span> <span class="mf">0.5</span><span class="p">)</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">os</span><span class="o">.</span><span class="n">unlink</span><span class="p">(</span><span class="n">temp_path</span><span class="p">)</span>
+                <span class="k">except</span><span class="p">:</span>
+                    <span class="k">pass</span>
+            <span class="n">threading</span><span class="o">.</span><span class="n">Thread</span><span class="p">(</span><span class="n">target</span><span class="o">=</span><span class="n">cleanup</span><span class="p">,</span> <span class="n">daemon</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
+    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">os</span><span class="o">.</span><span class="n">unlink</span><span class="p">(</span><span class="n">temp_path</span><span class="p">)</span>
+        <span class="k">except</span><span class="p">:</span>
+            <span class="k">pass</span>
+        <span class="k">raise</span> <span class="n">e</span>
+</pre></div>
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../../index.html">pysoniq</a></h1>
+
+
+
+
+
+
+
+
+
+<search id="searchbox" style="display: none" role="search">
+    <div class="searchformwrapper">
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="Search"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script><h3>Navigation</h3>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../_autosummary/pysoniq.html">pysoniq</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API Reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../api/pysoniq/pysoniq.html">pysoniq package</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../index.html">Documentation overview</a><ul>
+  <li><a href="../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &#169;2025-2026, laelume.
+      
+      |
+      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 9.1.0</a>
+      &amp; <a href="https://alabaster.readthedocs.io">Alabaster 1.0.0</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>
