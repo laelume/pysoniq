@@ -1,0 +1,29 @@
+# .readthedocs.yaml — pysoniq
+# Read the Docs build configuration.
+# Docs: https://docs.readthedocs.io/en/stable/config-file/v2.html
+
+version: 2
+
+build:
+  os: ubuntu-24.04
+  tools:
+    python: "3.12"
+  jobs:
+    # Regenerate API stubs from the current source on every build so the
+    # api/*.rst tree never goes stale. -f overwrites existing stubs.
+    pre_build:
+      - sphinx-apidoc -o docs/api pysoniq -f
+
+sphinx:
+  configuration: docs/conf.py
+  # Optional: fail the build on warnings once the docs are stable.
+  # fail_on_warning: true
+
+python:
+  install:
+    # Install pysoniq itself so autodoc can import it, plus the docs extra
+    # (sphinx, theme) defined in pyproject.toml [project.optional-dependencies].
+    - method: pip
+      path: .
+      extra_requirements:
+        - docs
