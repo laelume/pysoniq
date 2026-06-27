@@ -23,7 +23,6 @@ python:
   install:
     # Install pysoniq itself so autodoc can import it, plus the docs extra
     # (sphinx, theme) defined in pyproject.toml [project.optional-dependencies].
-    - requirements: docs/requirements.txt
     - method: pip
       path: .
       extra_requirements:
