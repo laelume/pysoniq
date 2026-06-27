@@ -14,20 +14,19 @@ sys.path.insert(0, os.path.abspath(".."))
 project = "pysoniq"
 author = "laelume"
 copyright = "2025-2026, laelume"
-license = "MIT"
 
-# -- Version: prefer live scm resolution, fall back to installed metadata ----
-try:
-    from setuptools_scm import get_version
-    release = get_version(root="..", relative_to=__file__)
-except Exception:  # FALLBACK: scm unavailable (e.g. sdist build, no .git)
-    from importlib.metadata import version as _v, PackageNotFoundError
-    try:
-        release = _v("pysoniq")
-    except PackageNotFoundError:
-        release = "0.0.0"
+# # -- Version: prefer live scm resolution, fall back to installed metadata ----
+# try:
+#     from setuptools_scm import get_version
+#     release = get_version(root="..", relative_to=__file__)
+# except Exception:  # FALLBACK: scm unavailable (e.g. sdist build, no .git)
+#     from importlib.metadata import version as _v, PackageNotFoundError
+#     try:
+#         release = _v("pysoniq")
+#     except PackageNotFoundError:
+#         release = "0.0.0"
 
-version = ".".join(release.split(".")[:2])
+# version = ".".join(release.split(".")[:2])
 
 # -- General configuration ----------------------------------------------------
 extensions = [
@@ -58,30 +57,32 @@ intersphinx_mapping = {
     "scipy": ("https://docs.scipy.org/doc/scipy/", None),
 }
 
-# -- Heavy/optional imports so autodoc doesn't need them at build time ---
-autodoc_imports = [
-    "numpy>=1.19.0",
-    "scipy",
-    "joblib"
-]
+
+# numpy/scipy/joblib are installed in the RTD env (pip install .[docs]),
+# so they are NOT mocked — mocking installed deps renders signatures as
+# <MagicMock>. Only add names here that genuinely cannot be installed.
+# autodoc_mock_imports = []
 
 # -- HTML output --------------------------------------------------------------
 html_theme = "alabaster"
 html_static_path = ["_static"]
 
+# NOTE: apidoc is run from .readthedocs.yaml pre_build (sphinx-apidoc -o docs/api pysoniq -f).
+# Do not also run it via a builder-inited hook here — that double-generates api/.
 
-# run apidoc at the start of every build via hook
-def run_apidoc(_):
-    from sphinx.ext.apidoc import main
-    import os
-    here = os.path.abspath(os.path.dirname(__file__))
-    packages = {
-        "pysoniq": "../pysoniq",
-    }
-    for name, path in packages.items():
-        out = os.path.join(here, "api", name)
-        src = os.path.abspath(os.path.join(here, path))
-        main(["-o", out, src, "--separate", "--module-first", "--force"])
 
-def setup(app):
-    app.connect("builder-inited", run_apidoc)
+# # run apidoc at the start of every build via hook
+# def run_apidoc(_):
+#     from sphinx.ext.apidoc import main
+#     import os
+#     here = os.path.abspath(os.path.dirname(__file__))
+#     packages = {
+#         "pysoniq": "../pysoniq",
+#     }
+#     for name, path in packages.items():
+#         out = os.path.join(here, "api", name)
+#         src = os.path.abspath(os.path.join(here, path))
+#         main(["-o", out, src, "--separate", "--module-first", "--force"])
+
+# def setup(app):
+#     app.connect("builder-inited", run_apidoc)

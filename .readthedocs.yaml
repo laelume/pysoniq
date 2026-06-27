@@ -9,6 +9,15 @@ build:
   tools:
     python: "3.12"
   jobs:
+
+    post_checkout:
+      - git fetch --unshallow || true
+      - git fetch origin main || true
+      - |
+        if git diff --quiet origin/main -- docs/ pysoniq/; then
+          exit 183
+        fi
+
     # Regenerate API stubs from the current source on every build so the
     # api/*.rst tree never goes stale. -f overwrites existing stubs.
     pre_build:
