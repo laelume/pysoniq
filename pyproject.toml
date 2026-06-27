@@ -59,3 +59,4 @@ pysoniq = ["*.md"]
 docs = ["sphinx", "alabaster"]
 
 [tool.setuptools_scm]
+version_scheme = "no-guess-dev"
