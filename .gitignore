@@ -16,5 +16,5 @@ Thumbs.db
 setup.cfg
 
 .github/workflows
-docs/api/
-docs/_autosummary/
+
+docs/
