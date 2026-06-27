@@ -17,4 +17,8 @@ setup.cfg
 
 .github/workflows
 
-docs/
+docs/api/
+docs/_autosummary/
+docs/_build/
+docs/_static/
+docs/_templates/
