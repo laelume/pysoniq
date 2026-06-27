@@ -1,8 +1,0 @@
-pysoniq.visualize
-=================
-
-.. automodule:: pysoniq.visualize
-
-   
-   
-   

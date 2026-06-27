@@ -1,7 +1,0 @@
-pysoniq.fourier module
-======================
-
-.. automodule:: pysoniq.fourier
-   :members:
-   :show-inheritance:
-   :undoc-members:

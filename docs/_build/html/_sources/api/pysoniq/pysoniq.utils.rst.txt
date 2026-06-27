@@ -1,7 +1,0 @@
-pysoniq.utils module
-====================
-
-.. automodule:: pysoniq.utils
-   :members:
-   :show-inheritance:
-   :undoc-members:

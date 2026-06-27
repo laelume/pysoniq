@@ -1,8 +1,0 @@
-pysoniq.gain
-============
-
-.. automodule:: pysoniq.gain
-
-   
-   
-   

@@ -1,7 +1,0 @@
-pysoniq.loop module
-===================
-
-.. automodule:: pysoniq.loop
-   :members:
-   :show-inheritance:
-   :undoc-members:

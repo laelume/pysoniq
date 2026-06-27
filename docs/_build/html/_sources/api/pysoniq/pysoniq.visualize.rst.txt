@@ -1,7 +1,0 @@
-pysoniq.visualize module
-========================
-
-.. automodule:: pysoniq.visualize
-   :members:
-   :show-inheritance:
-   :undoc-members:

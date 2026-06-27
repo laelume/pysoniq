@@ -1,7 +1,0 @@
-pysoniq.play module
-===================
-
-.. automodule:: pysoniq.play
-   :members:
-   :show-inheritance:
-   :undoc-members:

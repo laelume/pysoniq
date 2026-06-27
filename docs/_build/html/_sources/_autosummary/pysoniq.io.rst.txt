@@ -1,8 +1,0 @@
-pysoniq.io
-==========
-
-.. automodule:: pysoniq.io
-
-   
-   
-   

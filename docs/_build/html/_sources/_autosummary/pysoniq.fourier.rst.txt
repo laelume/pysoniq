@@ -1,8 +1,0 @@
-pysoniq.fourier
-===============
-
-.. automodule:: pysoniq.fourier
-
-   
-   
-   
