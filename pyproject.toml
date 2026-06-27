@@ -44,6 +44,9 @@ dependencies = [
 Homepage = "https://github.com/laelume/pysoniq"
 Repository = "https://github.com/laelume/pysoniq"
 Issues = "https://github.com/laelume/pysoniq/issues"
+Documentation = "https://pysoniq.readthedocs.io"
+Changelog = "https://pysoniq.readthedocs.io/en/latest/changelog.html"
+
 
 [tool.setuptools.packages.find]
 where = ["."]

@@ -6,6 +6,9 @@ Minimal Pythonic cross-platform audio analysis, synthesis, and playback library.
 - **Minimal dependencies** - numpy, scipy, wave, ffmpeg
 - **Simple API** - Play, pause, stop, loop
 
+[![Documentation Status](https://readthedocs.org/projects/pysoniq/badge/?version=latest)](https://pysoniq.readthedocs.io/en/latest/?badge=latest)
+
+
 ## Installation
 ```bash
 pip install pysoniq

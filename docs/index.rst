@@ -53,3 +53,8 @@ Indices and tables
 * :ref:`genindex`
 * :ref:`modindex`
 * :ref:`search`
+
+.. note::
+
+   `GitHub <https://github.com/laelume/pysoniq>`__ ·
+   `PyPI (pysoniq) <https://pypi.org/project/pysoniq/>`__
